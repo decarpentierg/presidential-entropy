@@ -1,0 +1,9 @@
+[project]
+name = "presidential-entropy"
+version = "0.1.0"
+description = "Live Shannon entropy of Polymarket's 2027 French presidential election distribution"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "requests>=2.34.2",
+]

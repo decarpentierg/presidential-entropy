@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Presidential Entropy — Polymarket 2027 French election</title>
+  <meta name="description"
+        content="Live Shannon entropy of Polymarket's probability distribution over candidates for the 2027 French presidential election." />
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Presidential&nbsp;Entropy</h1>
+      <p class="subtitle">
+        Shannon entropy of Polymarket's distribution over candidates for the
+        <strong>2027 French presidential election</strong> — how undecided the race is, over time.
+      </p>
+    </header>
+
+    <div class="toolbar">
+      <div class="control-group">
+        <span class="control-label">Units</span>
+        <div class="segmented" id="mode-switch" role="group" aria-label="Entropy units">
+          <button data-mode="bits" class="active">bits</button>
+          <button data-mode="nats">nats</button>
+          <button data-mode="dits">dits</button>
+          <button data-mode="neff">effective&nbsp;candidates</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Range</span>
+        <div class="segmented" id="range-switch" role="group" aria-label="Time range">
+          <button data-range="week">week</button>
+          <button data-range="1m">1M</button>
+          <button data-range="3m">3M</button>
+          <button data-range="1y">1Y</button>
+          <button data-range="all" class="active">all</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Overlay</span>
+        <label class="check"><input type="checkbox" id="toggle-candidates" /> <span class="swatch cand"></span> Number of candidates</label>
+        <label class="check"><input type="checkbox" id="toggle-sum" /> <span class="swatch sum"></span> Sum of probabilities</label>
+      </div>
+    </div>
+
+    <div id="chart"></div>
+
+    <footer>
+      <p>
+        <strong>Method:</strong> each candidate's probability is its Polymarket "Yes" price; the
+        named candidates' prices are renormalized when they sum above 1, and a synthetic
+        <em>"Other"</em> mass <code>1&nbsp;&minus;&nbsp;&Sigma;p</code> is added when they sum below&nbsp;1.
+        Entropy is computed over that distribution. The four units are transforms of one another
+        (<code>bits&nbsp;=&nbsp;nats&thinsp;/&thinsp;ln2</code>, <code>effective&nbsp;candidates&nbsp;=&nbsp;e^nats</code>).
+      </p>
+      <p class="meta">
+        Source: <a href="https://polymarket.com/event/next-french-presidential-election" target="_blank" rel="noopener">Polymarket</a>
+        &middot; updated hourly &middot; <span id="generated"></span>
+      </p>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
