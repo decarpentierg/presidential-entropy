@@ -2,7 +2,9 @@ name: Update data
 
 on:
   schedule:
-    - cron: "0 * * * *"   # hourly
+    # Hourly, but off the top-of-hour ":00" slot, which is the most congested on
+    # GitHub and where scheduled runs are most often delayed or skipped.
+    - cron: "19 * * * *"
   workflow_dispatch: {}    # allow manual runs
 
 # Avoid overlapping runs racing on the committed JSON.
