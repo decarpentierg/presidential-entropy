@@ -12,6 +12,9 @@ Maintains two files under ``docs/data/``:
   grid plus entropy (in nats), candidate count, and raw sum of probabilities.
   The four display modes are transforms of the nats series, computed in the
   browser.
+* ``candidates.json`` — the per-candidate *normalized* probabilities (after the
+  residual "Other" rule), downsampled, for the site's candidate views. Loaded
+  lazily by the browser, so the entropy view stays cheap.
 """
 
 from __future__ import annotations
@@ -27,6 +30,14 @@ ROOT = os.path.join(os.path.dirname(__file__), "..")
 # not published by GitHub Pages; only the small derived history.json is served.
 SERIES_PATH = os.path.join(ROOT, "data", "series.json")
 HISTORY_PATH = os.path.join(ROOT, "docs", "data", "history.json")
+CANDIDATES_PATH = os.path.join(ROOT, "docs", "data", "candidates.json")
+
+# The site only plots from 2026-01-01; anything older is dropped from the
+# per-candidate payload (history.json keeps it, it is cheap there).
+SITE_START = int(dt.datetime(2026, 1, 1, tzinfo=dt.timezone.utc).timestamp())
+# Full resolution is kept for the recent window; older points are thinned to one
+# per UTC day. Keeps candidates.json ~5x smaller than the raw grid.
+FULL_RES_DAYS = 60
 
 
 def _load_series() -> dict[str, list[tuple[int, float]]]:
@@ -87,6 +98,62 @@ def _build_history(series: dict[str, list[tuple[int, float]]]) -> dict:
     }
 
 
+def _keep_indices(grid: list[int]) -> list[int]:
+    """Indices of ``grid`` to publish: hourly recently, daily before.
+
+    The raw grid is the union of every candidate's timestamps, so it holds
+    several near-duplicate rows per hour (each market is sampled at its own
+    offset). Snapping to one row per bucket costs no visible detail and keeps
+    the published file — rewritten by CI every hour — small.
+    """
+    if not grid:
+        return []
+    cutoff = grid[-1] - FULL_RES_DAYS * 86400
+    last_in_bucket: dict[tuple[int, int], int] = {}
+    for i, t in enumerate(grid):
+        if t < SITE_START:
+            continue
+        bucket = 3600 if t >= cutoff else 86400
+        last_in_bucket[(bucket, t // bucket)] = i
+    return sorted(last_in_bucket.values())
+
+
+def _build_candidates(series: dict[str, list[tuple[int, float]]]) -> dict:
+    """Per-candidate normalized probabilities on the (downsampled) grid.
+
+    Unlike ``series.json`` (raw Yes-prices), these are the probabilities the
+    entropy is actually computed from: renormalized when the prices over-round,
+    with the synthetic ``Other`` atom carrying the residual mass. Each column
+    therefore sums to 1, which is what the stacked/snapshot views need.
+    """
+    names, grid, probs = entropy.build_matrix(series)
+    keep = _keep_indices(grid)
+
+    out: dict[str, list[float | None]] = {name: [] for name in names}
+    out["Other"] = []
+    for i in keep:
+        present = [name for name in names if probs[name][i] is not None]
+        dist = entropy.to_distribution([probs[name][i] for name in present])
+        # to_distribution returns the present candidates in order, plus a
+        # trailing Other atom only when the prices under-round (S < 1).
+        by_name = dict(zip(present, dist))
+        for name in names:
+            p = by_name.get(name)
+            out[name].append(round(p, 5) if p is not None else None)
+        out["Other"].append(round(dist[len(present)], 5) if len(dist) > len(present) else 0.0)
+
+    return {
+        "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "grid": [grid[i] for i in keep],
+        "candidates": out,
+    }
+
+
+def _save_candidates(payload: dict) -> None:
+    with open(CANDIDATES_PATH, "w") as f:
+        json.dump(payload, f, separators=(",", ":"))
+
+
 def _save_history(history: dict) -> None:
     with open(HISTORY_PATH, "w") as f:
         json.dump(history, f, separators=(",", ":"))
@@ -113,6 +180,14 @@ def main() -> None:
     history = _build_history(merged)
     _save_history(history)
     print(f"  wrote {HISTORY_PATH}  ({len(history['grid'])} grid points)")
+
+    candidates_payload = _build_candidates(merged)
+    _save_candidates(candidates_payload)
+    print(
+        f"  wrote {CANDIDATES_PATH}  "
+        f"({len(candidates_payload['grid'])} grid points, "
+        f"{len(candidates_payload['candidates'])} series)"
+    )
 
 
 if __name__ == "__main__":

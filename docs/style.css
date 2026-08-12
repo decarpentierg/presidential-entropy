@@ -102,6 +102,72 @@ header h1 {
   color: #07131c;
 }
 
+.tabs {
+  margin: 26px 0 0;
+}
+.tabs button { padding: 8px 16px; font-size: 0.9rem; }
+
+/* ---- sliders ---- */
+input[type="range"] {
+  appearance: none;
+  width: 190px;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* ---- snapshot time bar ---- */
+.timebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.timebar input[type="range"] { flex: 1; width: auto; }
+
+.play {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  width: 34px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.play:hover { border-color: var(--accent); color: var(--accent); }
+
+.snap-date {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 15ch;
+  text-align: right;
+}
+
 /* ---- checkboxes ---- */
 .check {
   display: flex;
